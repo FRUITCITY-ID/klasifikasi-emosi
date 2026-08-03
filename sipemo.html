@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SIPEMO — Sistem Pemantauan Emosi Publik (IndoBERTweet)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bahagia:#E8A317; --bahagia-bg:#FDF3E0;
+    --sedih:#2563EB;   --sedih-bg:#E8EEFD;
+    --marah:#DC2626;   --marah-bg:#FBE8E8;
+    --takut:#7C3AED;   --takut-bg:#F1EAFD;
+    --ink:#10151F; --muted:#606A7B; --faint:#8A93A3;
+    --line:#E4E8EE; --line-strong:#CDD3DD;
+    --paper:#F4F6F9; --card:#FFFFFF; --ink-panel:#141A24;
+    --disp:"Space Grotesk",sans-serif;
+    --body:"Inter",sans-serif;
+    --mono:"JetBrains Mono",monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    font-family:var(--body); background:var(--paper); color:var(--ink);
+    line-height:1.5; -webkit-font-smoothing:antialiased;
+    background-image:radial-gradient(var(--line) 1px, transparent 1px);
+    background-size:26px 26px; background-position:-13px -13px;
+  }
+  .wrap{max-width:1140px; margin:0 auto; padding:0 20px}
+
+  /* ---------- Header ---------- */
+  header{border-bottom:1.5px solid var(--ink); background:var(--card);
+    box-shadow:0 1px 0 rgba(16,21,31,.04)}
+  .head{display:flex; align-items:center; gap:18px; padding:18px 0; flex-wrap:wrap}
+  .mark{display:flex; align-items:baseline; gap:10px}
+  .logo{font-family:var(--disp); font-weight:700; font-size:26px; letter-spacing:-.5px;
+    line-height:1; position:relative}
+  .logo .dots{display:inline-flex; gap:3px; margin-left:2px; vertical-align:middle}
+  .logo .dots i{width:8px;height:8px;border-radius:50%;display:inline-block}
+  .logo .dots i:nth-child(1){background:var(--bahagia)}
+  .logo .dots i:nth-child(2){background:var(--sedih)}
+  .logo .dots i:nth-child(3){background:var(--marah)}
+  .logo .dots i:nth-child(4){background:var(--takut)}
+  .tag{font-family:var(--mono); font-size:11px; text-transform:uppercase; letter-spacing:.14em;
+    color:var(--muted)}
+  .head .sub{font-size:13px; color:var(--muted); max-width:340px; line-height:1.35}
+  .modelchip{margin-left:auto; display:flex; align-items:center; gap:8px;
+    font-family:var(--mono); font-size:12px; font-weight:500;
+    background:var(--ink-panel); color:#EDEFF3; padding:9px 14px; border-radius:999px}
+  .modelchip .pulse{width:8px;height:8px;border-radius:50%;background:#3DDC84;
+    box-shadow:0 0 0 0 rgba(61,220,132,.6); animation:pulse 2s infinite}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(61,220,132,.55)}70%{box-shadow:0 0 0 7px rgba(61,220,132,0)}100%{box-shadow:0 0 0 0 rgba(61,220,132,0)}}
+
+  main{padding:30px 0 70px}
+
+  .eyebrow{font-family:var(--mono); font-size:11px; text-transform:uppercase;
+    letter-spacing:.16em; color:var(--faint); display:flex; align-items:center; gap:10px}
+  .eyebrow::before{content:""; width:22px; height:1.5px; background:var(--line-strong)}
+
+  /* ---------- Input panel ---------- */
+  .panel{background:var(--card); border:1.5px solid var(--line-strong); border-radius:16px;
+    padding:24px}
+  .panel h2{font-family:var(--disp); font-weight:600; font-size:20px; letter-spacing:-.3px;
+    margin:10px 0 4px}
+  .panel .lead{font-size:14px; color:var(--muted); margin-bottom:18px}
+  textarea{width:100%; min-height:118px; resize:vertical; border:1.5px solid var(--line-strong);
+    border-radius:12px; padding:15px 16px; font-family:var(--body); font-size:16px; color:var(--ink);
+    background:#FBFCFD; transition:border-color .15s, box-shadow .15s}
+  textarea::placeholder{color:var(--faint)}
+  textarea:focus{outline:none; border-color:var(--ink); box-shadow:0 0 0 4px rgba(16,21,31,.06)}
+
+  .chips{display:flex; flex-wrap:wrap; gap:8px; margin:14px 0 4px}
+  .chip{font-size:12.5px; border:1.2px solid var(--line-strong); background:#fff; color:var(--muted);
+    padding:7px 12px; border-radius:999px; cursor:pointer; font-family:var(--body);
+    transition:all .13s; max-width:100%}
+  .chip:hover{border-color:var(--ink); color:var(--ink); background:#FBFCFD}
+  .chip:focus-visible{outline:2px solid var(--sedih); outline-offset:2px}
+  .chip .lab{font-family:var(--mono); font-size:10px; text-transform:uppercase; letter-spacing:.1em;
+    color:var(--faint); margin-right:7px}
+
+  .actions{display:flex; align-items:center; gap:14px; margin-top:20px; flex-wrap:wrap}
+  .btn{font-family:var(--disp); font-weight:600; font-size:15px; letter-spacing:.2px;
+    background:var(--ink); color:#fff; border:none; padding:13px 26px; border-radius:11px;
+    cursor:pointer; display:inline-flex; align-items:center; gap:10px; transition:transform .1s, opacity .15s}
+  .btn:hover{transform:translateY(-1px)}
+  .btn:active{transform:translateY(0)}
+  .btn:focus-visible{outline:2px solid var(--sedih); outline-offset:3px}
+  .btn:disabled{opacity:.5; cursor:default; transform:none}
+  .btn svg{width:17px;height:17px}
+  .btn-ghost{background:transparent; color:var(--muted); font-weight:500; font-family:var(--body);
+    font-size:13.5px; padding:8px 4px; border:none; cursor:pointer; text-decoration:underline;
+    text-underline-offset:3px; text-decoration-color:var(--line-strong)}
+  .btn-ghost:hover{color:var(--ink)}
+
+  /* ---------- Results ---------- */
+  #results{margin-top:34px}
+  .hidden{display:none}
+  .sectitle{font-family:var(--disp); font-weight:600; font-size:17px; letter-spacing:-.2px;
+    margin:0 0 16px; display:flex; align-items:center; gap:10px}
+  .sectitle .n{font-family:var(--mono); font-size:12px; color:var(--faint); font-weight:500}
+
+  .verdict{background:var(--ink-panel); color:#EDEFF3; border-radius:16px; padding:22px 24px;
+    margin-bottom:26px; display:flex; gap:22px; align-items:center; flex-wrap:wrap}
+  .verdict .vlab{font-family:var(--mono); font-size:11px; text-transform:uppercase;
+    letter-spacing:.16em; color:#8792A6; margin-bottom:8px}
+  .verdict .vlabels{display:flex; gap:9px; flex-wrap:wrap}
+  .vtag{font-family:var(--disp); font-weight:600; font-size:15px; padding:7px 15px 7px 13px;
+    border-radius:999px; display:inline-flex; align-items:center; gap:8px; color:#0d1017}
+  .vtag i{width:9px;height:9px;border-radius:50%;background:rgba(0,0,0,.35)}
+  .verdict .meta{margin-left:auto; text-align:right; font-family:var(--mono); font-size:12px; color:#8792A6}
+  .verdict .meta b{color:#EDEFF3; font-size:22px; font-family:var(--disp); font-weight:600; display:block}
+
+  .emgrid{display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:34px}
+  .emcard{border:1.5px solid var(--line-strong); border-radius:14px; padding:16px 16px 18px;
+    background:var(--card); position:relative; overflow:hidden}
+  .emcard[data-on="true"]{border-color:var(--c); box-shadow:0 4px 18px -8px var(--c)}
+  .emcard .top{display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px}
+  .emcard .emo{font-size:26px; line-height:1}
+  .emcard .stat{font-family:var(--mono); font-size:10px; font-weight:700; text-transform:uppercase;
+    letter-spacing:.08em; padding:4px 8px; border-radius:6px; background:#F0F2F5; color:var(--faint)}
+  .emcard[data-on="true"] .stat{background:var(--c-bg); color:var(--c)}
+  .emcard h3{font-family:var(--disp); font-weight:600; font-size:16px; text-transform:capitalize;
+    margin-bottom:2px}
+  .emcard .desc{font-size:11.5px; color:var(--faint); margin-bottom:14px; min-height:28px}
+  .prob{font-family:var(--mono); font-weight:700; font-size:28px; letter-spacing:-1px;
+    color:var(--c); line-height:1; margin-bottom:10px}
+  .prob small{font-size:14px; font-weight:500; color:var(--faint)}
+  .bar{height:7px; border-radius:99px; background:#EDEFF2; overflow:hidden}
+  .bar > i{display:block; height:100%; width:0; background:var(--c); border-radius:99px;
+    transition:width .9s cubic-bezier(.22,1,.36,1)}
+  .thr{font-family:var(--mono); font-size:10px; color:var(--faint); margin-top:7px;
+    display:flex; justify-content:space-between}
+
+  /* ---------- Pipeline trace ---------- */
+  .trace{display:grid; grid-template-columns:1fr 1fr; gap:14px}
+  .tcard{border:1.5px solid var(--line-strong); border-radius:14px; background:var(--card);
+    padding:16px 18px}
+  .tcard.full{grid-column:1 / -1}
+  .tcard .th{font-family:var(--mono); font-size:11px; text-transform:uppercase; letter-spacing:.12em;
+    color:var(--faint); display:flex; align-items:center; gap:9px; margin-bottom:12px}
+  .tcard .th .idx{background:var(--ink); color:#fff; width:20px; height:20px; border-radius:6px;
+    display:inline-flex; align-items:center; justify-content:center; font-weight:700; font-size:10px}
+  .tcard .th .note{margin-left:auto; text-transform:none; letter-spacing:0; color:var(--faint);
+    font-style:italic; font-family:var(--body); font-size:11px}
+  .flow{display:flex; align-items:center; gap:8px; flex-wrap:wrap}
+  .stage{font-family:var(--mono); font-size:11.5px; padding:6px 11px; border-radius:8px;
+    background:#F3F5F8; border:1px solid var(--line); color:var(--muted); white-space:nowrap}
+  .stage.done{background:#fff; border-color:var(--ink); color:var(--ink)}
+  .arrow{color:var(--line-strong); font-size:13px}
+  .toks{display:flex; flex-wrap:wrap; gap:6px}
+  .tok{font-family:var(--mono); font-size:12px; padding:4px 9px; border-radius:7px;
+    background:#F3F5F8; color:var(--ink); border:1px solid var(--line)}
+  .tok.norm{background:var(--sedih-bg); border-color:transparent; color:var(--sedih)}
+  .tok.lex{position:relative}
+  .tok.lex::after{content:""; position:absolute; left:8px; right:8px; bottom:-1px; height:2px;
+    background:var(--tc); border-radius:2px}
+  .glyphrow{display:flex; flex-wrap:wrap; gap:8px}
+  .glyph{display:flex; align-items:center; gap:8px; background:#F7F8FA; border:1px solid var(--line);
+    border-radius:9px; padding:6px 11px 6px 9px; font-family:var(--mono); font-size:12px}
+  .glyph .g{font-size:17px}
+  .glyph .to{color:var(--faint)}
+  .glyph .em{font-weight:700; text-transform:capitalize}
+  .empty{font-family:var(--mono); font-size:12px; color:var(--faint)}
+  .kv{font-family:var(--mono); font-size:12.5px; color:var(--muted); line-height:1.9}
+  .kv b{color:var(--ink)}
+  .fusion{display:flex; align-items:center; gap:10px; flex-wrap:wrap; font-family:var(--mono);
+    font-size:12px}
+  .fusion .vec{padding:7px 12px; border-radius:9px; color:#fff; font-weight:500}
+  .fusion .plus{font-size:16px; color:var(--faint)}
+  .fusion .eq{font-size:14px; color:var(--faint)}
+  .fusion .out{background:var(--ink-panel); color:#EDEFF3; padding:7px 12px; border-radius:9px}
+
+  /* ---------- Model & metrics ---------- */
+  .info{display:grid; grid-template-columns:1.3fr 1fr; gap:14px; margin-top:14px}
+  .mcard{border:1.5px solid var(--line-strong); border-radius:14px; background:var(--card); padding:18px 20px}
+  .mcard h4{font-family:var(--disp); font-weight:600; font-size:15px; margin-bottom:3px}
+  .mcard .cite{font-family:var(--mono); font-size:11px; color:var(--faint); margin-bottom:12px}
+  .mcard p{font-size:13px; color:var(--muted); line-height:1.55}
+  .metrics{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:6px}
+  .metric{border:1px solid var(--line); border-radius:10px; padding:11px 12px; background:#FBFCFD}
+  .metric .ml{font-family:var(--mono); font-size:10px; text-transform:uppercase; letter-spacing:.08em;
+    color:var(--faint)}
+  .metric .mv{font-family:var(--disp); font-weight:600; font-size:17px; color:var(--ink); margin-top:3px}
+  .metric .mv.ph{color:var(--line-strong)}
+  .metricnote{font-size:11.5px; color:var(--faint); margin-top:11px; line-height:1.5}
+
+  footer{border-top:1.5px solid var(--line-strong); background:var(--card); margin-top:10px}
+  .foot{padding:20px 0; font-size:12.5px; color:var(--muted); display:flex; gap:14px;
+    justify-content:space-between; flex-wrap:wrap; align-items:center}
+  .foot .demo{font-family:var(--mono); font-size:11px; background:var(--bahagia-bg); color:#8a6205;
+    padding:5px 11px; border-radius:999px}
+  .foot code{font-family:var(--mono); background:#F0F2F5; padding:1px 6px; border-radius:5px; font-size:11.5px}
+
+  @media (max-width:840px){
+    .emgrid{grid-template-columns:1fr 1fr}
+    .trace{grid-template-columns:1fr}
+    .info{grid-template-columns:1fr}
+    .verdict .meta{margin-left:0; text-align:left}
+  }
+  @media (max-width:520px){
+    .emgrid{grid-template-columns:1fr}
+    .head .sub{display:none}
+    .logo{font-size:22px}
+  }
+  @media (prefers-reduced-motion:reduce){
+    *{animation:none !important; transition:none !important}
+    .bar > i{transition:none}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap head">
+    <div class="mark">
+      <div class="logo">SIPEMO<span class="dots"><i></i><i></i><i></i><i></i></span></div>
+    </div>
+    <div class="sub">Sistem Pemantauan Emosi Publik — deteksi dini kesehatan mental melalui klasifikasi emosi multi-label pada teks media sosial berbahasa Indonesia.</div>
+    <div class="modelchip"><span class="pulse"></span>Model: IndoBERTweet</div>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+
+    <div class="panel">
+      <div class="eyebrow">Input Teks Media Sosial</div>
+      <h2>Analisis emosi dari sebuah cuitan</h2>
+      <p class="lead">Ketik teks berbahasa Indonesia — boleh disertai emoji dan emoticon. Sistem memprediksi empat kategori emosi secara <b>independen</b> (multi-label), sehingga satu teks bisa mengandung lebih dari satu emosi.</p>
+
+      <textarea id="input" placeholder="Contoh: Akhirnya lulus sidang juga! Lega banget 😊 tapi masih deg-degan mikirin revisi 😰"></textarea>
+
+      <div class="chips" id="chips" aria-label="Contoh teks">
+        <button class="chip" data-t="Akhirnya wisuda juga! Bahagia banget 🥳🎉 perjuangan selama ini akhirnya terbayar :D"><span class="lab">Bahagia</span>Wisuda</button>
+        <button class="chip" data-t="Sedih banget kehilangan sahabat sejak kecil 😭💔 rasanya hampa dan sepi"><span class="lab">Sedih</span>Kehilangan</button>
+        <button class="chip" data-t="Kesel banget sama pelayanan yang lambat ini 😡 bikin naik darah!"><span class="lab">Marah</span>Pelayanan</button>
+        <button class="chip" data-t="Deg-degan mau sidang besok, takut nggak bisa jawab pertanyaan penguji 😨 cemas parah"><span class="lab">Takut</span>Sidang</button>
+        <button class="chip" data-t="Senang akhirnya lulus tapi sedih harus pindah kota dan ninggalin teman-teman, campur aduk rasanya 😊😢"><span class="lab">Multi-label</span>Campur aduk</button>
+      </div>
+
+      <div class="actions">
+        <button class="btn" id="run">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3l14 9-14 9V3z"/></svg>
+          Analisis Emosi
+        </button>
+        <button class="btn-ghost" id="clear">Kosongkan</button>
+      </div>
+    </div>
+
+    <!-- ============ RESULTS ============ -->
+    <div id="results" class="hidden" aria-live="polite">
+
+      <div class="verdict">
+        <div>
+          <div class="vlab">Prediksi Multi-Label · Threshold σ ≥ 0.50</div>
+          <div class="vlabels" id="verdictLabels"></div>
+        </div>
+        <div class="meta">
+          Label aktif<b id="labelCount">0</b>dari 4 kategori emosi
+        </div>
+      </div>
+
+      <div class="sectitle"><span class="n">A.</span> Probabilitas per Emosi <span class="n" style="margin-left:auto; font-weight:400;">Sigmoid Activation Output</span></div>
+      <div class="emgrid" id="emgrid"></div>
+
+      <div class="sectitle"><span class="n">B.</span> Jejak Pipeline Pemrosesan</div>
+      <div class="trace">
+
+        <div class="tcard full">
+          <div class="th"><span class="idx">1</span> Ekstraksi Emoji &amp; Emoticon
+            <span class="note">dilakukan sebelum text cleaning agar sinyal multimodal tidak hilang</span>
+          </div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px" id="extractGrid"></div>
+        </div>
+
+        <div class="tcard full">
+          <div class="th"><span class="idx">2</span> Data Preprocessing</div>
+          <div class="flow" id="ppFlow"></div>
+          <div style="margin-top:14px" class="kv" id="ppText"></div>
+        </div>
+
+        <div class="tcard">
+          <div class="th"><span class="idx">3</span> Tokenisasi &amp; Normalisasi</div>
+          <div class="toks" id="tokens"></div>
+        </div>
+
+        <div class="tcard">
+          <div class="th"><span class="idx">4</span> Ekstraksi Fitur (3 Aliran)</div>
+          <div class="kv" id="featStreams"></div>
+        </div>
+
+        <div class="tcard full">
+          <div class="th"><span class="idx">5</span> Feature Fusion — Concatenation</div>
+          <div class="fusion">
+            <span class="vec" style="background:var(--sedih)">Teks · IndoBERTweet</span>
+            <span class="plus">⊕</span>
+            <span class="vec" style="background:var(--bahagia)">Emoji · Emoji2Vec</span>
+            <span class="plus">⊕</span>
+            <span class="vec" style="background:var(--takut)">Emoticon · Lexicon</span>
+            <span class="eq">=</span>
+            <span class="out" id="fusedDim">vektor fusi</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="sectitle" style="margin-top:34px"><span class="n">C.</span> Model &amp; Evaluasi</div>
+      <div class="info">
+        <div class="mcard">
+          <h4>IndoBERTweet</h4>
+          <div class="cite">Koto, Lau &amp; Baldwin (EMNLP 2021) · fine-tuned + Dense → Sigmoid</div>
+          <p>Model BERT yang dilatih khusus pada korpus tweet berbahasa Indonesia, sehingga lebih peka terhadap ragam bahasa informal, slang, dan konteks media sosial dibanding varian BERT umum. Pada eksperimen tesis, IndoBERTweet menjadi model dengan kinerja terbaik pada tugas klasifikasi emosi multi-label. Lapisan klasifikasi menggunakan <b>Dense Layer</b> diikuti <b>Sigmoid</b> agar setiap label diprediksi independen.</p>
+        </div>
+        <div class="mcard">
+          <h4>Metrik Evaluasi Multi-Label</h4>
+          <div class="cite">Metrik yang sesuai untuk kasus multi-label</div>
+          <div class="metrics">
+            <div class="metric"><div class="ml">Hamming Loss</div><div class="mv ph">—</div></div>
+            <div class="metric"><div class="ml">Subset Accuracy</div><div class="mv ph">—</div></div>
+            <div class="metric"><div class="ml">Micro-F1</div><div class="mv ph">—</div></div>
+            <div class="metric"><div class="ml">Macro-F1</div><div class="mv ph">—</div></div>
+          </div>
+          <div class="metricnote">Nilai sengaja dikosongkan — isi dengan hasil eksperimen Anda (rata-rata multi-seed) agar tidak ada angka yang mengada-ada saat sidang.</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap foot">
+    <span class="demo">MODE DEMO · inferensi lokal berbasis leksikon</span>
+    <span>Prototipe antarmuka untuk model IndoBERTweet. Pada sistem produksi, front-end ini memanggil endpoint inferensi model IndoBERTweet yang sudah di-<code>fine-tune</code>; demo ini memakai pendekatan leksikon+emoji untuk simulasi offline yang dapat dijalankan tanpa GPU.</span>
+  </div>
+</footer>
+
+<script>
+/* ============================================================
+   SIPEMO — simulasi inferensi multi-label (mode demo)
+   Pipeline sesuai diagram: ekstraksi emoji/emoticon -> preprocessing
+   -> tokenisasi/normalisasi -> ekstraksi fitur 3 aliran -> fusi
+   -> "IndoBERTweet" -> Dense -> Sigmoid (4 label independen)
+   ============================================================ */
+
+const EMO = {
+  bahagia:{color:'var(--bahagia)', bg:'var(--bahagia-bg)', glyph:'😊', desc:'Gembira, senang, syukur, puas'},
+  sedih:  {color:'var(--sedih)',   bg:'var(--sedih-bg)',   glyph:'😢', desc:'Kehilangan, kecewa, hampa, pilu'},
+  marah:  {color:'var(--marah)',   bg:'var(--marah-bg)',   glyph:'😠', desc:'Kesal, benci, geram, emosi'},
+  takut:  {color:'var(--takut)',   bg:'var(--takut-bg)',   glyph:'😨', desc:'Cemas, khawatir, panik, ngeri'},
+};
+const ORDER = ['bahagia','sedih','marah','takut'];
+
+/* ---- Leksikon kata emosi (bobot default 1) ---- */
+const LEX = {
+  bahagia:['senang','seneng','bahagia','gembira','suka','cinta','sayang','syukur','bersyukur','alhamdulillah','seru','asik','asyik','mantap','mantul','keren','bangga','lega','semangat','ketawa','tertawa','senyum','tersenyum','indah','terbaik','sukses','berhasil','menang','hebat','ceria','riang','girang','puas','nyaman','damai','bagus','love','happy','gemilang','antusias'],
+  sedih:['sedih','kecewa','nangis','menangis','tangis','patah','hampa','kehilangan','rindu','kangen','galau','murung','terpuruk','hancur','luka','terluka','pilu','duka','menyesal','sesal','sepi','kesepian','sendiri','sunyi','menderita','tersakiti','down','nelangsa','merana','remuk','hilang'],
+  marah:['marah','kesal','kesel','benci','muak','jengkel','geram','emosi','sebal','sebel','murka','dendam','sialan','brengsek','kampret','menyebalkan','menjengkelkan','ganggu','mengganggu','bete','esmosi','sewot','naik'],
+  takut:['takut','ketakutan','cemas','khawatir','kuatir','panik','gugup','ngeri','waswas','deg-degan','degdegan','trauma','gelisah','resah','tegang','seram','menakutkan','mengerikan','horor','terancam','mencekam','waspada','ciut'],
+};
+/* frasa 2-kata */
+const PHRASE = {'naik darah':'marah','sakit hati':'sedih','patah hati':'sedih','deg degan':'takut','was was':'takut','tidak sabar':'takut'};
+
+const NEG = new Set(['tidak','tak','bukan','jangan','belum','nggak','gak','ga','ngga','gk','tdk']);
+const INT = new Set(['sangat','banget','sekali','amat','sungguh','paling','super','begitu','betul','benar']);
+
+/* Normalisasi slang -> baku */
+const NORM = {
+  gak:'tidak', ga:'tidak', nggak:'tidak', ngga:'tidak', tdk:'tidak', gk:'tidak', ngk:'tidak',
+  bgt:'banget', bngt:'banget', bgtt:'banget', yg:'yang', aja:'saja', udh:'sudah', udah:'sudah',
+  dgn:'dengan', dg:'dengan', sy:'saya', km:'kamu', kmu:'kamu', tp:'tapi', krn:'karena', karna:'karena',
+  jd:'jadi', dr:'dari', klo:'kalau', kalo:'kalau', skrg:'sekarang', sm:'sama', dpt:'dapat',
+  blm:'belum', org:'orang', bnyk:'banyak', byk:'banyak', kzl:'kesal', luv:'cinta', syg:'sayang',
+  moga:'semoga', gmn:'bagaimana', ninggalin:'meninggalkan', mikirin:'memikirkan', bikin:'membuat'
+};
+
+/* Emoji -> emosi */
+const EMOJI = {
+  '😊':'bahagia','😄':'bahagia','😁':'bahagia','😃':'bahagia','🙂':'bahagia','😀':'bahagia','😆':'bahagia','😍':'bahagia','🥰':'bahagia','🤗':'bahagia','🥳':'bahagia','😌':'bahagia','🤩':'bahagia','😻':'bahagia','👍':'bahagia','✨':'bahagia','🎉':'bahagia','❤':'bahagia','💕':'bahagia','💖':'bahagia','🧡':'bahagia','💛':'bahagia','💚':'bahagia','💙':'bahagia','💜':'bahagia','😹':'bahagia',
+  '😢':'sedih','😭':'sedih','😞':'sedih','😔':'sedih','😟':'sedih','🙁':'sedih','☹':'sedih','😥':'sedih','😓':'sedih','💔':'sedih','😩':'sedih','😫':'sedih','🥺':'sedih','😿':'sedih',
+  '😠':'marah','😡':'marah','🤬':'marah','👿':'marah','😤':'marah','💢':'marah','😾':'marah',
+  '😨':'takut','😰':'takut','😱':'takut','😦':'takut','😧':'takut','🫣':'takut','😬':'takut','😳':'takut'
+};
+
+/* Emoticon -> emosi (dicek dari yang terpanjang) */
+const EMOTICON = [
+  [":')",'bahagia'],[":-D",'bahagia'],[":D",'bahagia'],[":-)",'bahagia'],[":)",'bahagia'],["=)",'bahagia'],["^_^",'bahagia'],["^^",'bahagia'],["(:",'bahagia'],[":3",'bahagia'],["c:",'bahagia'],["xD",'bahagia'],["XD",'bahagia'],
+  [":'(",'sedih'],[":-(",'sedih'],[":(",'sedih'],["T_T",'sedih'],[";_;",'sedih'],[":<",'sedih'],["D':",'sedih'],["):",'sedih'],[";(",'sedih'],
+  [">:(",'marah'],[">:-(",'marah'],[":@",'marah'],[">:O",'marah'],[">:o",'marah'],
+  ["D:",'takut'],["D-:",'takut'],[":S",'takut'],[":-S",'takut'],[":s",'takut'],["o_o",'takut'],["O_O",'takut']
+];
+
+const sigmoid = x => 1/(1+Math.exp(-x));
+const stripEmoji = e => e.replace(/[\uFE0F\u200D\u{1F3FB}-\u{1F3FF}]/gu,'');
+
+function analyze(raw){
+  const trace = {};
+  let work = raw;
+
+  /* --- 1. Ekstraksi emoticon (sebelum cleaning) --- */
+  const emoticons = [];
+  for(const [e,emo] of EMOTICON){
+    let i;
+    while((i = work.indexOf(e)) !== -1){
+      emoticons.push({sym:e, emo});
+      work = work.slice(0,i) + ' ' + work.slice(i+e.length);
+    }
+  }
+  /* --- 1b. Ekstraksi emoji --- */
+  const emojis = [];
+  const found = raw.match(/\p{Extended_Pictographic}/gu) || [];
+  for(const g of found){
+    const key = stripEmoji(g);
+    if(EMOJI[key]) emojis.push({sym:g, emo:EMOJI[key]});
+  }
+  work = work.replace(/\p{Extended_Pictographic}/gu,' ');
+  trace.emojis = emojis; trace.emoticons = emoticons;
+
+  /* --- 2. Cleaning --- */
+  let cleaned = work
+    .replace(/https?:\/\/\S+/g,' ')
+    .replace(/@\w+/g,' ')
+    .replace(/#/g,' ')
+    .replace(/\bRT\b/g,' ')
+    .replace(/[^A-Za-z\u00C0-\u024F\s-]/g,' ')
+    .replace(/\s+/g,' ').trim();
+  /* --- 3. Case folding --- */
+  const folded = cleaned.toLowerCase();
+  /* --- 4/5. Tokenisasi + normalisasi --- */
+  const rawTokens = folded.split(/\s+/).filter(Boolean);
+  const tokens = rawTokens.map(t=>{
+    const n = NORM[t];
+    return {surface:t, norm:n||t, changed:!!n};
+  });
+  trace.cleaned = cleaned; trace.tokens = tokens;
+
+  /* --- Skoring per emosi (aliran teks) --- */
+  const score = {bahagia:0, sedih:0, marah:0, takut:0};
+  const lexHits = {}; // index -> emo
+  const words = tokens.map(t=>t.norm);
+
+  /* frasa 2-kata */
+  for(let i=0;i<words.length-1;i++){
+    const bg = words[i]+' '+words[i+1];
+    if(PHRASE[bg]){ score[PHRASE[bg]] += 1.2; lexHits[i]=PHRASE[bg]; lexHits[i+1]=PHRASE[bg]; }
+  }
+  /* kata tunggal + intensifier + negasi */
+  for(let i=0;i<words.length;i++){
+    const w = words[i];
+    let emo=null;
+    for(const k of ORDER){ if(LEX[k].includes(w)){ emo=k; break; } }
+    if(!emo) continue;
+    let weight = 1;
+    const p1 = words[i-1], p2 = words[i-2];
+    if(INT.has(p1)||INT.has(words[i+1])) weight *= 1.6;
+    if(NEG.has(p1)||NEG.has(p2)) weight *= 0.25;   // negasi meredam sinyal
+    score[emo] += weight;
+    lexHits[i] = emo;
+  }
+  trace.lexHits = lexHits;
+
+  /* --- aliran emoji & emoticon --- */
+  let emojiScore={}, emoticonScore={};
+  emojis.forEach(e=>{ score[e.emo]+=1.6; emojiScore[e.emo]=(emojiScore[e.emo]||0)+1; });
+  emoticons.forEach(e=>{ score[e.emo]+=1.3; emoticonScore[e.emo]=(emoticonScore[e.emo]||0)+1; });
+  trace.textScore = {...score};
+
+  /* --- Sigmoid per label (independen) --- */
+  const probs = {};
+  for(const k of ORDER) probs[k] = sigmoid(1.05*score[k] - 1.55);
+  trace.probs = probs;
+  trace.rawScore = score;
+  trace.emojiScore = emojiScore; trace.emoticonScore = emoticonScore;
+  return trace;
+}
+
+/* ============================ RENDER ============================ */
+const $ = s => document.querySelector(s);
+const reduce = window.matchMedia('(prefers-reduced-motion:reduce)').matches;
+
+function render(t){
+  const results = $('#results');
+  results.classList.remove('hidden');
+
+  /* Verdict */
+  const active = ORDER.filter(k=>t.probs[k]>=0.5).sort((a,b)=>t.probs[b]-t.probs[a]);
+  const vl = $('#verdictLabels');
+  if(active.length){
+    vl.innerHTML = active.map(k=>`<span class="vtag" style="background:${EMO[k].bg}"><i style="background:${EMO[k].color}"></i>${EMO[k].glyph} ${k}</span>`).join('');
+  } else {
+    vl.innerHTML = `<span class="vtag" style="background:#EEF0F3"><i></i>Netral / tidak terdeteksi</span>`;
+  }
+  $('#labelCount').textContent = active.length;
+
+  /* Emotion cards */
+  const grid = $('#emgrid');
+  grid.innerHTML = ORDER.map(k=>{
+    const p = t.probs[k], pct = Math.round(p*100), on = p>=0.5;
+    return `<div class="emcard" data-on="${on}" style="--c:${EMO[k].color};--c-bg:${EMO[k].bg}">
+      <div class="top">
+        <span class="emo">${EMO[k].glyph}</span>
+        <span class="stat">${on?'AKTIF':'nonaktif'}</span>
+      </div>
+      <h3>${k}</h3>
+      <div class="desc">${EMO[k].desc}</div>
+      <div class="prob">${p.toFixed(2)}<small> σ</small></div>
+      <div class="bar"><i data-w="${pct}"></i></div>
+      <div class="thr"><span>0.0</span><span>threshold 0.5</span><span>1.0</span></div>
+    </div>`;
+  }).join('');
+  requestAnimationFrame(()=>{
+    grid.querySelectorAll('.bar > i').forEach(b=>{ b.style.width = b.dataset.w + '%'; });
+  });
+
+  /* 1. Ekstraksi emoji & emoticon */
+  const ext = $('#extractGrid');
+  const emojiHtml = t.emojis.length
+    ? `<div class="glyphrow">${t.emojis.map(e=>`<span class="glyph"><span class="g">${e.sym}</span><span class="to">→</span><span class="em" style="color:${EMO[e.emo].color}">${e.emo}</span></span>`).join('')}</div>`
+    : `<div class="empty">— tidak ada emoji terdeteksi</div>`;
+  const emotHtml = t.emoticons.length
+    ? `<div class="glyphrow">${t.emoticons.map(e=>`<span class="glyph"><span class="g" style="font-family:var(--mono)">${e.sym}</span><span class="to">→</span><span class="em" style="color:${EMO[e.emo].color}">${e.emo}</span></span>`).join('')}</div>`
+    : `<div class="empty">— tidak ada emoticon terdeteksi</div>`;
+  ext.innerHTML = `
+    <div><div class="th" style="margin-bottom:9px">Emoji → Emoji2Vec</div>${emojiHtml}</div>
+    <div><div class="th" style="margin-bottom:9px">Emoticon → Lexicon Mapping</div>${emotHtml}</div>`;
+
+  /* 2. Preprocessing flow + hasil teks */
+  $('#ppFlow').innerHTML = ['Cleaning','Case Folding','Tokenisasi','Normalisasi']
+    .map((s,i,a)=>`<span class="stage done">${s}</span>${i<a.length-1?'<span class="arrow">→</span>':''}`).join('');
+  $('#ppText').innerHTML = `Teks bersih (tanpa emoji/emoticon): <b>${t.cleaned || '—'}</b>`;
+
+  /* 3. Tokens */
+  $('#tokens').innerHTML = t.tokens.map((tok,i)=>{
+    const emo = t.lexHits[i];
+    const cls = ['tok', tok.changed?'norm':'', emo?'lex':''].filter(Boolean).join(' ');
+    const style = emo?`style="--tc:${EMO[emo].color}"`:'';
+    const label = tok.changed ? `${tok.surface}→${tok.norm}` : tok.norm;
+    return `<span class="${cls}" ${style}>${label}</span>`;
+  }).join('') || '<span class="empty">— tidak ada token</span>';
+
+  /* 4. Feature streams */
+  const es = Object.entries(t.emojiScore).map(([k,v])=>`${v}× ${k}`).join(', ') || 'kosong';
+  const cs = Object.entries(t.emoticonScore).map(([k,v])=>`${v}× ${k}`).join(', ') || 'kosong';
+  $('#featStreams').innerHTML =
+    `<div><b>Teks</b> → IndoBERTweet tokenizer → embedding [CLS]</div>
+     <div><b>Emoji</b> → Emoji2Vec → ${es}</div>
+     <div><b>Emoticon</b> → lexicon → ${cs}</div>`;
+
+  /* 5. Fusion */
+  $('#fusedDim').textContent = 'vektor fusi → Dense → Sigmoid(4)';
+
+  results.scrollIntoView({behavior: reduce?'auto':'smooth', block:'start'});
+}
+
+/* ============================ EVENTS ============================ */
+function runAnalysis(){
+  const text = $('#input').value.trim();
+  if(!text){ $('#input').focus(); return; }
+  const btn = $('#run');
+  btn.disabled = true;
+  const result = analyze(text);
+  const delay = reduce ? 0 : 260;
+  setTimeout(()=>{ render(result); btn.disabled = false; }, delay);
+}
+
+$('#run').addEventListener('click', runAnalysis);
+$('#clear').addEventListener('click', ()=>{
+  $('#input').value=''; $('#results').classList.add('hidden'); $('#input').focus();
+});
+$('#input').addEventListener('keydown', e=>{
+  if((e.metaKey||e.ctrlKey) && e.key==='Enter') runAnalysis();
+});
+document.querySelectorAll('#chips .chip').forEach(c=>{
+  c.addEventListener('click', ()=>{ $('#input').value = c.dataset.t; runAnalysis(); });
+});
+</script>
+</body>
+</html>
