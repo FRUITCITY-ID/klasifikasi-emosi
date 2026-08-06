@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "sipemo",
+      "runtimeExecutable": ".venv/Scripts/python.exe",
+      "runtimeArgs": ["-m", "uvicorn", "app:app", "--port", "8000", "--app-dir", "backend"],
+      "port": 8000
+    }
+  ]
+}

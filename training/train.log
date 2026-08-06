@@ -1,0 +1,41 @@
+Some weights of BertForSequenceClassification were not initialized from the model checkpoint at indobenchmark/indobert-base-p1 and are newly initialized: ['classifier.bias', 'classifier.weight']
+You should probably TRAIN this model on a down-stream task to be able to use it for predictions and inference.
+device: cpu | torch: 2.13.0+cpu | threads: 6
+split : {'train': 1750, 'val': 219, 'test': 219, 'total': 2188}
+model : IndoBERT-base (baseline) (indobenchmark/indobert-base-p1)
+        vocab embedding: 50,000
+  ep1 step 20/110 loss=0.4536 eta_epoch=5.5m
+  ep1 step 40/110 loss=0.3520 eta_epoch=4.3m
+  ep1 step 60/110 loss=0.3042 eta_epoch=3.1m
+  ep1 step 80/110 loss=0.2620 eta_epoch=1.9m
+  ep1 step 100/110 loss=0.1908 eta_epoch=0.6m
+  [IndoBERT-base (baseline)] ep=1 loss=0.2955 val_F1macro=0.8687 thr=0.35 (7.0m)
+        checkpoint disimpan (val F1-macro 0.8687)
+  ep2 step 20/110 loss=0.1050 eta_epoch=5.5m
+  ep2 step 40/110 loss=0.0902 eta_epoch=4.2m
+  ep2 step 60/110 loss=0.0638 eta_epoch=3.0m
+  ep2 step 80/110 loss=0.0715 eta_epoch=1.8m
+  ep2 step 100/110 loss=0.0709 eta_epoch=0.6m
+  [IndoBERT-base (baseline)] ep=2 loss=0.0779 val_F1macro=0.9620 thr=0.25 (6.8m)
+        checkpoint disimpan (val F1-macro 0.9620)
+  ep3 step 20/110 loss=0.0531 eta_epoch=5.3m
+  ep3 step 40/110 loss=0.0436 eta_epoch=4.1m
+  ep3 step 60/110 loss=0.0484 eta_epoch=3.0m
+  ep3 step 80/110 loss=0.0405 eta_epoch=1.8m
+  ep3 step 100/110 loss=0.0432 eta_epoch=0.6m
+  [IndoBERT-base (baseline)] ep=3 loss=0.0448 val_F1macro=0.9789 thr=0.30 (6.7m)
+        checkpoint disimpan (val F1-macro 0.9789)
+Traceback (most recent call last):
+  File "C:\Users\CAHAYA DUNIA CERIA\Documents\Sipemo\training\train_indobert.py", line 299, in <module>
+    raise SystemExit(main())
+                     ~~~~^^
+  File "C:\Users\CAHAYA DUNIA CERIA\Documents\Sipemo\training\train_indobert.py", line 272, in main
+    best_ckpt = torch.load(CHECKPOINT, map_location=device, weights_only=True)
+  File "C:\Users\CAHAYA DUNIA CERIA\Documents\Sipemo\.venv\Lib\site-packages\torch\serialization.py", line 1609, in load
+    raise pickle.UnpicklingError(_get_wo_message(str(e))) from None
+_pickle.UnpicklingError: Weights only load failed. This file can still be loaded, to do so you have two options, [1mdo those steps only if you trust the source of the checkpoint[0m. 
+	(1) In PyTorch 2.6, we changed the default value of the `weights_only` argument in `torch.load` from `False` to `True`. Re-running `torch.load` with `weights_only` set to `False` will likely succeed, but it can result in arbitrary code execution. Do it only if you got the file from a trusted source.
+	(2) Alternatively, to load with `weights_only=True` please check the recommended steps in the following error message.
+	WeightsUnpickler error: Unsupported global: GLOBAL numpy._core.multiarray.scalar was not an allowed global by default. Please use `torch.serialization.add_safe_globals([numpy._core.multiarray.scalar])` or the `torch.serialization.safe_globals([numpy._core.multiarray.scalar])` context manager to allowlist this global if you trust this class/function.
+
+Check the documentation of torch.load to learn more about types accepted by default with weights_only https://pytorch.org/docs/stable/generated/torch.load.html.

@@ -1,0 +1,196 @@
+/* ==========================================================================
+   SIPEMO — design tokens
+   Palet emosi diambil dari palet data-viz tervalidasi dan sudah lolos enam
+   pemeriksaan (lightness band, chroma floor, separasi CVD, normal-vision
+   floor, kontras) pada mode terang maupun gelap.
+
+     senang  #eda100 / #c98500     sedih  #2a78d6 / #3987e5
+     marah   #e34948 / #e66767     takut  #4a3aa7 / #9085e9
+
+   Catatan kontras: pada surface terang, #eda100 berada di 2.11:1 (< 3:1).
+   Aturan relief berlaku — setiap mark warna WAJIB didampingi label teks yang
+   terlihat, dan tampilan tabel selalu tersedia. Jangan pernah memakai warna
+   sebagai satu-satunya pembawa makna.
+
+   Teks muted: --text-muted memakai nilai BERBEDA di terang (#6b6a65) dan gelap
+   (#9c9a93), sama seperti --text-secondary. Sebelumnya keduanya memakai
+   #898781 yang sama, sehingga teks 11px (.hint, .eyebrow, .tile-note, .sm-sub)
+   turun ke 3.0–3.5:1 di mode terang — di bawah ambang WCAG AA 4.5:1 untuk teks
+   kecil. Nilai sekarang diukur pada surface TERGELAP tiap tema, yaitu kasus
+   terburuknya: 4.53:1 di atas #ebebe7 dan 4.97:1 di atas #2c2c2a.
+   ========================================================================== */
+
+:root {
+  color-scheme: light;
+
+  /* Permukaan & tinta */
+  --surface-page: #f9f9f7;
+  --surface-1: #fcfcfb;
+  --surface-2: #f3f3f0;
+  --surface-3: #ebebe7;
+  --text-primary: #0b0b0b;
+  --text-secondary: #52514e;
+  /* Wajib disetel ulang per tema — lihat catatan "Teks muted" di kepala file. */
+  --text-muted: #6b6a65;
+  --grid: #e1e0d9;
+  --axis: #c3c2b7;
+  --border: rgba(11, 11, 11, 0.1);
+  --border-strong: rgba(11, 11, 11, 0.18);
+  --shadow-sm: 0 1px 2px rgba(11, 11, 11, 0.04);
+  --shadow-md: 0 4px 16px -6px rgba(11, 11, 11, 0.14);
+  --shadow-lg: 0 18px 48px -20px rgba(11, 11, 11, 0.28);
+
+  /* Emosi */
+  --c-senang: #eda100;
+  --c-sedih: #2a78d6;
+  --c-marah: #e34948;
+  --c-takut: #4a3aa7;
+
+  /* Slot kategorikal untuk chart satu-seri */
+  --series-1: #2a78d6;
+
+  /* Varian TEKS dari --series-1, untuk dipakai di atas --wash-accent.
+     --series-1 sendiri dirancang sebagai warna MARK (batang, garis) yang
+     ambangnya 3:1; dipakai sebagai teks 11px di atas wash biru ia hanya
+     mencapai 3.84:1, di bawah AA 4.5:1. Nilai ini 5.77:1 di atas wash yang
+     sama. Jangan pakai untuk mark — kontras antar-serinya berbeda. */
+  --series-1-text: #1c5cab;
+
+  /* Badge padat (mis. penanda "DILAYANI"). Dipisah dari --series-1 karena
+     ambangnya beda: yang dinilai adalah teks DI DALAM badge. Memakai
+     --series-1 langsung memberi putih-di-atas-#2a78d6 = 4.42:1 di terang dan
+     3.64:1 di gelap, keduanya di bawah AA. */
+  --badge-bg: #1c5cab;
+  --badge-fg: #ffffff;
+
+  /* Ramp sequential (biru) — dipakai pada intensitas tabel */
+  --seq-100: #cde2fb;
+  --seq-250: #86b6ef;
+  --seq-400: #3987e5;
+  --seq-550: #1c5cab;
+
+  /* Status — tetap, tidak ikut tema, selalu berpasangan ikon + label */
+  --status-good: #0ca30c;
+  --status-warning: #fab219;
+  --status-serious: #ec835a;
+  --status-critical: #d03b3b;
+  --status-good-text: #006300;
+
+  /* Wash lembut untuk latar chip */
+  --wash-good: rgba(12, 163, 12, 0.1);
+  --wash-warning: rgba(250, 178, 25, 0.16);
+  --wash-critical: rgba(208, 59, 59, 0.1);
+  --wash-accent: rgba(42, 120, 214, 0.09);
+
+  /* Tipografi — satu keluarga sans, tanpa display/serif */
+  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: ui-monospace, "Cascadia Code", "SF Mono", Consolas, monospace;
+
+  --text-xs: 0.6875rem;
+  --text-sm: 0.8125rem;
+  --text-base: 0.9375rem;
+  --text-md: 1.0625rem;
+  --text-lg: 1.375rem;
+  --text-xl: 1.875rem;
+  --text-hero: 2.75rem;
+
+  /* Ritme spasi */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 24px;
+  --sp-6: 32px;
+  --sp-7: 48px;
+  --sp-8: 64px;
+
+  --radius-sm: 6px;
+  --radius: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+  --radius-pill: 999px;
+
+  --maxw: 1180px;
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Nilai gelap dideklarasikan di dua scope: media query menangani preferensi
+   OS, scope [data-theme] menangani tombol toggle dan harus menang.
+   Guard :not() membuat stempel "light" mengalahkan OS-dark. */
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme="light"])) {
+    color-scheme: dark;
+    --surface-page: #0d0d0d;
+    --surface-1: #1a1a19;
+    --surface-2: #232322;
+    --surface-3: #2c2c2a;
+    --text-primary: #ffffff;
+    --text-secondary: #c3c2b7;
+    --text-muted: #9c9a93;
+    --grid: #2c2c2a;
+    --axis: #383835;
+    --border: rgba(255, 255, 255, 0.1);
+    --border-strong: rgba(255, 255, 255, 0.18);
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --shadow-md: 0 4px 16px -6px rgba(0, 0, 0, 0.6);
+    --shadow-lg: 0 18px 48px -20px rgba(0, 0, 0, 0.8);
+
+    --c-senang: #c98500;
+    --c-sedih: #3987e5;
+    --c-marah: #e66767;
+    --c-takut: #9085e9;
+    --series-1: #3987e5;
+    --series-1-text: #86b6ef;
+  --badge-bg: #86b6ef;
+  --badge-fg: #0b0b0b;
+
+    --seq-100: #184f95;
+    --seq-250: #1c5cab;
+    --seq-400: #3987e5;
+    --seq-550: #86b6ef;
+
+    --status-good-text: #0ca30c;
+    --wash-good: rgba(12, 163, 12, 0.16);
+    --wash-warning: rgba(250, 178, 25, 0.14);
+    --wash-critical: rgba(208, 59, 59, 0.16);
+    --wash-accent: rgba(57, 135, 229, 0.14);
+  }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --surface-page: #0d0d0d;
+  --surface-1: #1a1a19;
+  --surface-2: #232322;
+  --surface-3: #2c2c2a;
+  --text-primary: #ffffff;
+  --text-secondary: #c3c2b7;
+  --text-muted: #9c9a93;
+  --grid: #2c2c2a;
+  --axis: #383835;
+  --border: rgba(255, 255, 255, 0.1);
+  --border-strong: rgba(255, 255, 255, 0.18);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 16px -6px rgba(0, 0, 0, 0.6);
+  --shadow-lg: 0 18px 48px -20px rgba(0, 0, 0, 0.8);
+
+  --c-senang: #c98500;
+  --c-sedih: #3987e5;
+  --c-marah: #e66767;
+  --c-takut: #9085e9;
+  --series-1: #3987e5;
+  --series-1-text: #86b6ef;
+  --badge-bg: #86b6ef;
+  --badge-fg: #0b0b0b;
+
+  --seq-100: #184f95;
+  --seq-250: #1c5cab;
+  --seq-400: #3987e5;
+  --seq-550: #86b6ef;
+
+  --status-good-text: #0ca30c;
+  --wash-good: rgba(12, 163, 12, 0.16);
+  --wash-warning: rgba(250, 178, 25, 0.14);
+  --wash-critical: rgba(208, 59, 59, 0.16);
+  --wash-accent: rgba(57, 135, 229, 0.14);
+}

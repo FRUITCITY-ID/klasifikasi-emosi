@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="id" data-theme="">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SIPEMO — Sistem Pemantauan Emosi Publik</title>
+<meta name="description" content="Klasifikasi emosi multi-label pada teks media sosial berbahasa Indonesia menggunakan IndoBERT-base.">
+<!-- Path aset sengaja relatif. Di GitHub Pages situs ini tinggal di sub-path
+     /klasifikasi-emosi/, sehingga "/css/tokens.css" akan menunjuk ke akar
+     domain dan 404. Bentuk relatif benar di kedua tempat: dilayani uvicorn
+     dari "/" maupun dari sub-path Pages. -->
+<link rel="stylesheet" href="css/tokens.css">
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/components.css">
+<script>
+  /* Terapkan tema tersimpan sebelum paint pertama untuk mencegah kedipan. */
+  (function () {
+    var t = localStorage.getItem("sipemo-theme");
+    if (t === "light" || t === "dark") document.documentElement.dataset.theme = t;
+  })();
+</script>
+</head>
+<body>
+
+<header class="app-header">
+  <div class="wrap header-inner">
+    <div class="brand">
+      <span class="brand-name">SIPEMO</span>
+      <span class="brand-dots" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+    </div>
+    <div class="brand-sub">Sistem Pemantauan Emosi Publik — klasifikasi emosi multi-label teks media sosial Indonesia</div>
+    <div class="spacer"></div>
+    <div class="status-chip" id="statusChip" data-state="loading" role="status" aria-live="polite">
+      <span class="dot"></span><span>Memuat model…</span>
+    </div>
+    <button class="icon-btn theme-toggle" id="themeToggle" type="button" aria-label="Ganti tema terang / gelap">
+      <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+        <circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>
+      </svg>
+      <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z"/>
+      </svg>
+    </button>
+  </div>
+  <div class="wrap">
+    <div class="tabs" role="tablist" aria-label="Bagian aplikasi">
+      <button class="tab" role="tab" data-view="analyze" aria-selected="true" tabindex="0">Analisis</button>
+      <button class="tab" role="tab" data-view="eval" aria-selected="false" tabindex="-1">Evaluasi Model</button>
+      <button class="tab" role="tab" data-view="data" aria-selected="false" tabindex="-1">Dataset &amp; Metode</button>
+    </div>
+  </div>
+</header>
+
+<main class="app-main">
+  <div class="wrap">
+
+    <!-- ============ ANALISIS ============ -->
+    <section class="view stack" data-view="analyze" role="tabpanel" aria-label="Analisis">
+
+      <div id="modelBanner"></div>
+
+      <div class="card composer">
+        <div class="eyebrow">Input teks media sosial</div>
+        <h1 class="card-title" style="font-size:var(--text-lg);margin:8px 0 6px">Analisis emosi sebuah cuitan</h1>
+        <p class="lead" style="margin-bottom:16px">
+          Empat emosi diprediksi <b>independen</b> lewat sigmoid, bukan softmax — satu teks bisa
+          mengandung lebih dari satu emosi sekaligus, atau tidak satu pun.
+        </p>
+
+        <div class="banner" data-level="info" style="margin-bottom:16px">
+          <svg class="banner-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="9"/><path d="M12 16v-5M12 8.5v.01"/>
+          </svg>
+          <div>
+            <div class="banner-title">Tidak ada kelas “netral”</div>
+            <div class="banner-body">
+              Model hanya mengenal empat emosi di atas. Baris tanpa kata kunci emosi dibuang saat
+              pelabelan, jadi model tidak pernah melihat contoh teks netral — kalimat datar seperti
+              <i>“Rapat dimulai pukul sembilan”</i> tetap akan diberi label, dan paling sering
+              <b>senang</b> karena label itu mendominasi data latih. Rinciannya ada di tab
+              <b>Dataset &amp; Metode</b>.
+            </div>
+          </div>
+        </div>
+
+        <label class="visually-hidden" for="input">Teks yang akan dianalisis</label>
+        <textarea id="input" placeholder="Contoh: Akhirnya lulus sidang juga! Lega banget 😊 tapi masih deg-degan mikirin revisi"></textarea>
+
+        <div class="samples" id="samples" aria-label="Contoh teks"></div>
+
+        <div class="composer-foot">
+          <button class="btn" id="runBtn" type="button" disabled>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3l14 9-14 9V3z"/></svg>
+            Analisis emosi
+          </button>
+          <button class="btn btn-quiet" id="clearBtn" type="button">Kosongkan</button>
+          <span class="hint"><kbd>Ctrl</kbd> + <kbd>Enter</kbd> untuk menjalankan</span>
+        </div>
+      </div>
+
+      <div id="results" class="stack" hidden aria-live="polite"></div>
+    </section>
+
+    <!-- ============ EVALUASI ============ -->
+    <section class="view stack" data-view="eval" role="tabpanel" aria-label="Evaluasi Model" hidden>
+      <div id="evalView" class="stack"></div>
+    </section>
+
+    <!-- ============ DATASET ============ -->
+    <section class="view stack" data-view="data" role="tabpanel" aria-label="Dataset dan Metode" hidden>
+      <div id="dataView" class="stack"></div>
+    </section>
+
+  </div>
+</main>
+
+<footer class="app-footer">
+  <div class="wrap stack" style="gap:10px">
+    <p>
+      Antarmuka penelitian untuk <code>multilabel_bert_comparison.ipynb</code>. Setiap angka pada
+      halaman Evaluasi dan Dataset disalin langsung dari output eksekusi notebook — tidak ada nilai
+      yang dihitung ulang atau diperkirakan di sisi antarmuka.
+    </p>
+    <p>
+      Prediksi dijalankan oleh model sungguhan di backend: teks melewati <code>_norm()</code>,
+      kamus slang, tokenizer IndoBERT, lalu sigmoid dan threshold hasil tuning. Bila checkpoint
+      tidak tersedia atau tidak cocok arsitekturnya, sistem menolak memprediksi alih-alih menampilkan
+      angka yang menyesatkan.
+    </p>
+  </div>
+</footer>
+
+<script type="module" src="js/main.js"></script>
+</body>
+</html>

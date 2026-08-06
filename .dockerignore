@@ -1,0 +1,16 @@
+# Konteks build cukup berisi backend/ dan frontend/. Sisanya hanya
+# memperlambat unggahan konteks ke builder Railway.
+.venv/
+.runtime/
+.git/
+.github/
+__pycache__/
+*.py[cod]
+
+arsip/
+data/
+models/
+training/
+*.ipynb
+*.xlsx
+*.bat

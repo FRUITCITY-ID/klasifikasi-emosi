@@ -1,0 +1,10 @@
+# Dependensi tambahan untuk MELATIH ulang checkpoint. Backend saat melayani
+# prediksi tidak membutuhkan satu pun paket di file ini — pasang hanya kalau
+# Anda menjalankan skrip di folder training/.
+#
+#   .venv\Scripts\pip install -r backend/requirements.txt -r training/requirements.txt
+#
+# Versi mengikuti notebook (cell 2) sejauh masih tersedia untuk Python yang dipakai.
+pandas>=2.0          # baca XLSX, urutan dropna/drop_duplicates seperti cell 3
+openpyxl>=3.1        # engine XLSX untuk pandas
+scikit-learn>=1.3    # train_test_split (cell 5) & f1_score/hamming_loss (cell 8-9)

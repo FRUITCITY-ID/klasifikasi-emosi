@@ -1,0 +1,20 @@
+# Runtime state
+.runtime/
+
+# Virtual environment
+.venv/
+
+# Checkpoint tidak bisa masuk git: GitHub menolak file di atas 100 MiB dalam
+# riwayat, sedangkan best_indobert_base.pt berukuran ~475 MiB. File itu
+# dilampirkan sebagai aset GitHub Release (batas 2 GiB) lalu diunduh saat build
+# oleh backend/fetch_checkpoint.py.
+models/*.pt
+models/*.pth
+models/*.bin
+models/*.safetensors
+
+# Python
+__pycache__/
+*.py[cod]
+
+!models/README.md
