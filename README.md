@@ -9,6 +9,9 @@ bukan simulasi leksikon. Kalau checkpoint tidak tersedia atau arsitekturnya tida
 cocok, sistem **menolak memprediksi** dan menjelaskan sebabnya, bukan menampilkan
 angka yang menyesatkan.
 
+**Live:** <https://fruitcity-id.github.io/klasifikasi-emosi/>
+· API <https://sipemo-api-production.up.railway.app/api/health>
+
 ---
 
 ## Struktur
@@ -24,6 +27,7 @@ Sipemo/
 │   ├── test_pipeline.py    Uji paritas preprocessing vs notebook
 │   ├── verify_research.py  88 uji: tiap angka di UI vs output notebook
 │   ├── probe_neutral.py    Ukur perilaku model pada teks netral & teks kosong
+│   ├── fetch_checkpoint.py Unduh checkpoint dari aset GitHub Release + cek sha256
 │   └── requirements.txt
 ├── frontend/
 │   ├── index.html
@@ -35,9 +39,44 @@ Sipemo/
 │   ├── verify_reproduction.py  34 pemeriksaan checkpoint lokal vs output notebook
 │   └── requirements.txt
 ├── arsip/                      prototipe lama — TIDAK berlaku, lihat arsip/README.md
+├── Dockerfile                  image backend untuk Railway
+├── .github/workflows/pages.yml terbitkan frontend/ ke GitHub Pages
 ├── tugas-akhir_cleaned.xlsx    dataset mentah, 20.559 baris
 └── multilabel_bert_comparison.ipynb
 ```
+
+---
+
+## Deployment
+
+Sistem ini hidup di dua tempat karena GitHub Pages hanya melayani berkas statis —
+Python dan PyTorch tidak bisa berjalan di sana.
+
+| Bagian | Tempat | Dipicu oleh |
+|---|---|---|
+| Antarmuka (`frontend/`) | GitHub Pages | `.github/workflows/pages.yml`, setiap push yang menyentuh `frontend/` |
+| API (`backend/`) | Railway, proyek `sipemo` | push ke `main`, dibangun dari `Dockerfile` |
+| Checkpoint (475 MiB) | Aset GitHub Release `v1.0-model` | diunggah manual sekali |
+
+`frontend/js/api.js` memilih alamat backend dari hostname: string kosong
+(sama-origin) saat dibuka di `localhost`, URL Railway di tempat lain. Jadi berkas
+yang sama benar di kedua lingkungan tanpa langkah build.
+
+**Kenapa checkpoint tidak ikut di dalam git.** GitHub menolak berkas di atas
+100 MiB dalam riwayat, dan `best_indobert_base.pt` berukuran ~475 MiB. Git LFS
+bisa menampungnya tetapi kuota bandwidth gratisnya 1 GiB/bulan — dua kali build
+sudah menghabiskannya. Aset Release berbatas 2 GiB, tidak memakai kuota LFS, dan
+bisa diunduh tanpa autentikasi. `backend/fetch_checkpoint.py` mengambilnya saat
+build, mencocokkan sha256, dan menghentikan build kalau tidak cocok — supaya
+image tidak pernah terbit membawa bobot yang salah.
+
+Mengganti checkpoint:
+
+```bash
+gh release upload v1.0-model models/best_indobert_base.pt --clobber
+```
+
+Lalu perbarui `SIPEMO_CHECKPOINT_SHA256` pada `Dockerfile` dan deploy ulang.
 
 ---
 
@@ -63,6 +102,15 @@ Buka <http://127.0.0.1:8000>.
 > `verify_reproduction.py` **34/34**, termasuk 876 keputusan prediksi test set
 > yang identik elemen per elemen dengan notebook. Kalau Anda mengganti versi,
 > jalankan ulang skrip itu.
+>
+> Yang **ada** batasnya: `transformers<5` dan `torch>=2.6`. Batas atas
+> transformers dipasang setelah build deployment memasang 5.14.1 — versi mayor
+> yang belum pernah diadu dengan output notebook, sehingga metrik yang
+> ditampilkan UI akan berubah status dari pengukuran menjadi klaim. Lantai torch
+> bukan preferensi: sejak transformers 4.56, `check_torch_load_is_safe()`
+> menolak memuat `pytorch_model.bin` dengan torch di bawah 2.6
+> (CVE-2025-32434), dan `indobenchmark/indobert-base-p1` tidak menyediakan
+> varian safetensors.
 
 Tab **Evaluasi Model** dan **Dataset & Metode** langsung berfungsi tanpa checkpoint —
 isinya angka beku dari notebook. Tab **Analisis** butuh checkpoint.
