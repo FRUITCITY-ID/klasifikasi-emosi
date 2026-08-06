@@ -6,7 +6,11 @@
 # membuka URL Railway langsung tetap memberi UI yang berfungsi kalau Pages
 # bermasalah saat sidang.
 # =============================================================================
-FROM python:3.11-slim
+# Python 3.13 dipilih supaya sama dengan lingkungan tempat
+# training/verify_reproduction.py lolos 34/34 (Python 3.13.14, torch 2.13.0+cpu,
+# transformers 4.57.6). Menyamakan interpreter menghilangkan satu variabel dari
+# pertanyaan "apakah yang dilayani berperilaku sama dengan notebook".
+FROM python:3.13-slim
 
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
@@ -20,9 +24,13 @@ WORKDIR /app
 # torch dipasang lebih dulu dari indeks CPU milik PyTorch. Wheel default di
 # PyPI membawa runtime CUDA sekitar 2,5 GiB — tidak ada gunanya di Railway yang
 # tanpa GPU, dan cukup besar untuk membuat build gagal kehabisan ruang.
+#
+# Versi dipatok ke 2.13.0 — versi yang sama dengan lingkungan tempat
+# training/verify_reproduction.py lolos 34/34, jadi image ini menjalankan model
+# di atas torch yang perilakunya sudah diperiksa terhadap output notebook.
 RUN pip install --no-cache-dir \
         --index-url https://download.pytorch.org/whl/cpu \
-        "torch==2.5.1"
+        "torch==2.13.0"
 
 # requirements.txt menuliskan torch>=2.1; pip melihat 2.5.1+cpu sudah terpasang
 # dan melewatinya, jadi baris di atas tidak tertimpa wheel CUDA.

@@ -23,11 +23,23 @@
 #
 #   .venv\Scripts\python training/verify_reproduction.py
 #   .venv\Scripts\python backend/test_pipeline.py
+# Batas atas <5 ditambahkan setelah build Railway 2026-08-06 memasang
+# transformers 5.14.1 dan gagal. Alasannya bukan sekadar build yang merah:
+# seluruh verifikasi di atas dijalankan pada lini 4.x, sehingga 5.x adalah
+# versi mayor yang belum pernah diadu dengan output notebook. Angka yang
+# ditampilkan UI adalah metrik hasil notebook; melayani model di atas
+# transformers yang perilakunya belum diperiksa membuat angka itu menjadi
+# klaim, bukan pengukuran. Naikkan batas ini hanya setelah
+# training/verify_reproduction.py lolos pada versi yang baru.
 fastapi>=0.115
 uvicorn[standard]>=0.34
 pydantic>=2.10
-transformers>=4.44
-torch>=2.1
+transformers>=4.44,<5
+# torch 2.6 adalah lantai keras, bukan preferensi: sejak transformers 4.56
+# check_torch_load_is_safe() menolak memuat pytorch_model.bin dengan torch di
+# bawah 2.6 (CVE-2025-32434), dan indobenchmark/indobert-base-p1 tidak
+# menyediakan varian safetensors.
+torch>=2.6
 numpy>=1.26
 
 # Instal torch versi CPU dengan:
