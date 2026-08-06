@@ -47,11 +47,16 @@ AutoModelForSequenceClassification.from_pretrained( \
 # Checkpoint hasil training (~475 MiB) diambil dari aset GitHub Release. Nilai
 # default ada di backend/fetch_checkpoint.py; ARG di bawah hanya untuk
 # menimpanya tanpa mengubah kode.
-ARG SIPEMO_CHECKPOINT_URL=""
+ARG SIPEMO_CHECKPOINT_URL="https://github.com/FRUITCITY-ID/klasifikasi-emosi/releases/download/v1.0-model/best_indobert_base.pt"
 ARG SIPEMO_CHECKPOINT_SHA256="48168bf6e294768c1b567c262d82f473c51ef2becae51a29e08c7cc6499d8e5c"
-ENV SIPEMO_CHECKPOINT_URL=${SIPEMO_CHECKPOINT_URL} \
-    SIPEMO_CHECKPOINT_SHA256=${SIPEMO_CHECKPOINT_SHA256}
-RUN python /app/backend/fetch_checkpoint.py
+RUN SIPEMO_CHECKPOINT_URL="${SIPEMO_CHECKPOINT_URL}" \
+    SIPEMO_CHECKPOINT_SHA256="${SIPEMO_CHECKPOINT_SHA256}" \
+    python /app/backend/fetch_checkpoint.py
+
+# Gate build: kalau langkah di atas gagal mengunduh, image ini tidak boleh
+# terbit. Server yang naik tanpa bobot hanya akan melaporkan 'no_checkpoint'
+# di /api/health — lebih baik ketahuan saat build daripada saat sidang.
+RUN test -s /app/models/best_indobert_base.pt
 
 EXPOSE 8000
 

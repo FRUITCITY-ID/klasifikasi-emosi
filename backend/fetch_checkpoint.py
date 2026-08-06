@@ -105,17 +105,23 @@ def download(url: str, dest: Path) -> None:
 
 
 def main() -> int:
-    url = os.environ.get("SIPEMO_CHECKPOINT_URL", DEFAULT_URL).strip()
+    # `or` dipakai, bukan nilai default os.environ.get: Dockerfile menyetel
+    # variabel ini lewat ARG, dan ARG tanpa nilai menghasilkan string KOSONG,
+    # bukan variabel yang tidak ada. os.environ.get("X", DEFAULT) akan
+    # mengembalikan "" dalam kasus itu — checkpoint tidak pernah terunduh dan
+    # server naik tanpa bobot.
+    url = (os.environ.get("SIPEMO_CHECKPOINT_URL") or DEFAULT_URL).strip()
     dest = config.CHECKPOINT_PATH
 
     if already_good(dest):
         print(f"[fetch] checkpoint sudah ada di {dest} — unduhan dilewati.")
         return 0
 
-    if not url:
+    # Jalan keluar eksplisit untuk build yang memang tidak mau membawa bobot.
+    if url.lower() in ("none", "skip"):
         print(
-            "[fetch] SIPEMO_CHECKPOINT_URL kosong dan checkpoint tidak ada. "
-            "Server tetap akan start, tetapi /api/health melaporkan "
+            "[fetch] SIPEMO_CHECKPOINT_URL=none — unduhan dilewati atas "
+            "permintaan. Server tetap start, tetapi /api/health melaporkan "
             "'no_checkpoint' dan prediksi dinonaktifkan.",
             file=sys.stderr,
         )

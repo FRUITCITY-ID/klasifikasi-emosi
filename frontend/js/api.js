@@ -4,7 +4,7 @@
 
 /* Alamat backend saat antarmuka ini TIDAK disajikan oleh backend-nya sendiri.
    Diisi saat deployment; lihat resolveBase() di bawah. */
-const REMOTE_API = "https://REPLACE_ME.up.railway.app";
+const REMOTE_API = "https://sipemo-api-production.up.railway.app";
 
 /* Backend bisa berada di dua tempat, dan keduanya harus tetap berfungsi:
 
