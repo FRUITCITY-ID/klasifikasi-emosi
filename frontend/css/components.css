@@ -674,7 +674,7 @@ table.fusion .prob-cell { font-variant-numeric: tabular-nums; text-align: right;
 .caveat-body { font-size: var(--text-sm); color: var(--text-secondary); }
 
 /* --------------------------------------------------------------------------
-   Skeleton & footer
+   Skeleton
    -------------------------------------------------------------------------- */
 .is-stale { opacity: 0.45; transition: opacity 0.2s; }
 
@@ -687,16 +687,6 @@ table.fusion .prob-cell { font-variant-numeric: tabular-nums; text-align: right;
   animation: spin 0.7s linear infinite;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
-
-.app-footer {
-  border-top: 1px solid var(--border);
-  margin-top: var(--sp-7);
-  padding: var(--sp-5) 0;
-  font-size: var(--text-xs);
-  color: var(--text-muted);
-}
-.app-footer .row { align-items: flex-start; }
-.app-footer p { max-width: 74ch; }
 
 /* --------------------------------------------------------------------------
    Responsif
@@ -717,7 +707,7 @@ table.fusion .prob-cell { font-variant-numeric: tabular-nums; text-align: right;
 }
 
 @media print {
-  .app-header, .tabs, .composer-foot, .view-toggle, .app-footer { display: none; }
+  .app-header, .tabs, .composer-foot, .view-toggle { display: none; }
   .view[hidden] { display: block !important; }
   .card { break-inside: avoid; box-shadow: none; }
 }

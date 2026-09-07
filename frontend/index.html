@@ -114,22 +114,6 @@
   </div>
 </main>
 
-<footer class="app-footer">
-  <div class="wrap stack" style="gap:10px">
-    <p>
-      Antarmuka penelitian untuk <code>multilabel_bert_comparison.ipynb</code>. Setiap angka pada
-      halaman Evaluasi dan Dataset disalin langsung dari output eksekusi notebook — tidak ada nilai
-      yang dihitung ulang atau diperkirakan di sisi antarmuka.
-    </p>
-    <p>
-      Prediksi dijalankan oleh model sungguhan di backend: teks melewati <code>_norm()</code>,
-      kamus slang, tokenizer IndoBERT, lalu sigmoid dan threshold hasil tuning. Bila checkpoint
-      tidak tersedia atau tidak cocok arsitekturnya, sistem menolak memprediksi alih-alih menampilkan
-      angka yang menyesatkan.
-    </p>
-  </div>
-</footer>
-
 <script type="module" src="js/main.js"></script>
 </body>
 </html>
