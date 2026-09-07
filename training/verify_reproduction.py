@@ -28,6 +28,7 @@ from __future__ import annotations
 
 import ast
 import json
+import os
 import re
 import sys
 from pathlib import Path
@@ -52,7 +53,10 @@ from train_indobert import (  # noqa: E402
     make_splits,
 )
 
-NOTEBOOK = PROJECT_DIR / "multilabel_bert_comparison.ipynb"
+# Sama seperti backend/verify_research.py: `SIPEMO_NOTEBOOK` mengarahkan
+# pembanding ke salinan notebook lain tanpa menimpa file di repo.
+_NB = Path(os.environ.get("SIPEMO_NOTEBOOK") or "multilabel_bert_comparison.ipynb")
+NOTEBOOK = _NB if _NB.is_absolute() else PROJECT_DIR / _NB
 MODEL_NAME = "IndoBERT-base (baseline)"
 
 results: list[tuple[bool, str, str, str]] = []

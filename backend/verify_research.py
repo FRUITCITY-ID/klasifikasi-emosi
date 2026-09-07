@@ -14,9 +14,17 @@ Yang diperiksa:
   * statistik dataset & split                                     (cell 3, 4, 5)
   * hyperparameter & versi runtime                                (cell 1, 2)
   * best_result() harus memilih model yang sama dengan cell 14    (cell 14)
+  * output tersimpan benar-benar dihasilkan source di sel yang sama (cell 13, 14)
 
 Tanpa dependensi di luar pustaka standar, jadi bisa dijalankan kapan saja:
 
+    .venv\\Scripts\\python backend/verify_research.py
+
+Untuk memeriksa salinan notebook lain — misalnya unduhan baru dari Colab —
+tanpa menimpa file di repo, set `SIPEMO_NOTEBOOK` (path relatif dihitung dari
+folder proyek):
+
+    set SIPEMO_NOTEBOOK=unduhan-baru.ipynb
     .venv\\Scripts\\python backend/verify_research.py
 
 Catatan soal frontend: `frontend/js/` tidak memuat satu pun angka penelitian.
@@ -29,6 +37,7 @@ from __future__ import annotations
 
 import ast
 import json
+import os
 import re
 import sys
 from pathlib import Path
@@ -39,7 +48,13 @@ sys.path.insert(0, str(BASE_DIR))
 
 import research as R  # noqa: E402
 
-NOTEBOOK = PROJECT_DIR / "multilabel_bert_comparison.ipynb"
+
+def _notebook_path() -> Path:
+    p = Path(os.environ.get("SIPEMO_NOTEBOOK") or "multilabel_bert_comparison.ipynb")
+    return p if p.is_absolute() else PROJECT_DIR / p
+
+
+NOTEBOOK = _notebook_path()
 
 results: list[tuple[bool, str, str, str]] = []
 
@@ -132,6 +147,56 @@ def check_frontend_labeling_claims() -> None:
             if needle in text:
                 hits.append(f"{js.name}: '{needle}' ({why})")
     check("frontend tidak memuat klaim pelabelan yang keliru", hits, [])
+
+
+def _collapse_backslashes(s: str) -> str:
+    """`C:\\\\MULTI LABEL\\\\Hasil` dan `C:\\MULTI LABEL\\Hasil` dianggap sama."""
+    return re.sub(r"\\{2,}", "\\\\", s)
+
+
+def check_outputs_match_source(src: list[str], out: list[str]) -> None:
+    """
+    Output tersimpan harus benar-benar dihasilkan source di sel yang sama.
+
+    Semua pemeriksaan di atas membandingkan research.py dengan OUTPUT notebook.
+    Notebook yang source-nya disunting setelah dieksekusi tetap lolos semua:
+    angkanya memang angka asli, tapi kode yang terpampang di sebelahnya bukan
+    kode yang menghasilkannya — dan pembaca skripsi tidak punya cara tahu.
+
+    Yang membocorkannya adalah path. Cell 13 dan 14 mencetak nama file yang baru
+    saja mereka tulis, jadi FOLDER tujuan yang tercetak wajib muncul juga di
+    source sel itu. Kalau cell 13 menyimpan ke `RESULTS_DIR / f'cm_{safe}.png'`
+    tetapi outputnya berbunyi `saved C:\\MULTI LABEL\\Hasil\\cm_....png`, source
+    itu tidak pernah dijalankan.
+
+    Yang dibandingkan hanya foldernya, bukan path lengkap: nama file di cell 13
+    berasal dari f-string (`cm_{safe}.png`), jadi hanya folder yang tetap literal
+    di source. Itu sudah cukup — source yang disunting agar menulis ke folder
+    proyek tidak mungkin mencetak folder di luar proyek.
+    """
+    printed = [
+        (13, m) for m in re.findall(r"^saved (.+?) ->", out[13], re.M)
+    ] + [
+        (14, m)
+        for m in re.findall(
+            r"^saved (?:summary|inference demo): (.+?)(?: rows: \d+)?$", out[14], re.M
+        )
+    ]
+    # Kalau regex di atas patah, `stale` akan kosong dan pemeriksaannya lolos
+    # tanpa pernah membandingkan apa pun. Pastikan dua sel itu benar-benar
+    # menyumbang path.
+    check(
+        "cell 13 & 14 mencetak path file yang disimpan",
+        sorted({cell for cell, _ in printed}),
+        [13, 14],
+    )
+
+    stale = set()
+    for cell, path in printed:
+        folder = re.sub(r"[\\/][^\\/]*$", "", _collapse_backslashes(path))
+        if folder and folder not in _collapse_backslashes(src[cell]):
+            stale.add(f"cell {cell}: output menulis ke '{folder}', source tidak")
+    check("output notebook dihasilkan source notebook yang sama", sorted(stale), [])
 
 
 def main() -> int:
@@ -243,7 +308,10 @@ def main() -> int:
     m = re.search(r"best model by F1-macro:\s*(.+?)\s*\(F1_macro=", c14o)
     check("best_result() sama dengan cell 14", R.best_result()["model"], m.group(1))
 
-    # ---- 5. frontend ------------------------------------------------------
+    # ---- 5. provenance output notebook ------------------------------------
+    check_outputs_match_source(src, out)
+
+    # ---- 6. frontend ------------------------------------------------------
     check_frontend_has_no_numbers()
     check_frontend_labeling_claims()
 

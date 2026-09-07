@@ -25,7 +25,7 @@ Sipemo/
 │   ├── model.py            Muat checkpoint + verifikasi arsitektur + inferensi
 │   ├── research.py         Metrik hasil eksekusi notebook (beku, tidak dihitung ulang)
 │   ├── test_pipeline.py    Uji paritas preprocessing vs notebook
-│   ├── verify_research.py  88 uji: tiap angka di UI vs output notebook
+│   ├── verify_research.py  90 uji: tiap angka di UI vs output notebook
 │   ├── probe_neutral.py    Ukur perilaku model pada teks netral & teks kosong
 │   ├── fetch_checkpoint.py Unduh checkpoint dari aset GitHub Release + cek sha256
 │   └── requirements.txt
@@ -128,10 +128,10 @@ isinya angka beku dari notebook. Tab **Analisis** butuh checkpoint.
 
 ## Menyiapkan checkpoint
 
-> **Penting.** Jangan gunakan `best_bert.pt` dari eksekusi notebook versi lama;
-> file itu **bukan** bobot IndoBERT-base.
+> **Penting.** Jangan gunakan `best_bert.pt` hasil eksekusi notebook; file itu
+> **bukan** bobot IndoBERT-base.
 
-Pada versi awal cell 9, `train_one()` menyimpan ke path yang sama untuk setiap model:
+Di cell 9, `train_one()` menyimpan ke path yang sama untuk setiap model:
 
 ```python
 torch.save({...}, r'C:\MULTI LABEL\Hasil\best_bert.pt')
@@ -151,10 +151,10 @@ memberi `sedih 0.536` lebih tinggi daripada `senang 0.424` untuk kalimat
 Backend ini memverifikasi checkpoint sebelum memakainya, jadi kekeliruan itu tidak
 akan terulang di antarmuka.
 
-Versi cell 9 yang sekarang sudah memakai `CHECKPOINT_FILES` — tiap model punya
-file sendiri, jadi menjalankan ulang notebook juga menghasilkan
-`models/best_indobert_base.pt` yang benar. Peringatan di atas hanya berlaku untuk
-`best_bert.pt` peninggalan versi lama.
+Konsekuensinya: **menjalankan ulang notebook tidak menghasilkan checkpoint yang
+bisa dilayani.** Satu-satunya file yang tersisa adalah `best_bert.pt` berisi
+mBERT. Pakai `training/train_indobert.py` di bawah — skrip itu melatih
+IndoBERT-base saja dan menulisnya ke `models/best_indobert_base.pt`.
 
 ### Cara menghasilkan checkpoint tanpa membuka notebook
 
@@ -295,12 +295,28 @@ mekanika pipeline, bukan kualitas prediksi.
 .venv\Scripts\python backend/verify_research.py
 ```
 
-88 pemeriksaan. `backend/research.py` adalah satu-satunya sumber angka untuk tab
+90 pemeriksaan. `backend/research.py` adalah satu-satunya sumber angka untuk tab
 Evaluasi Model dan Dataset & Metode, dan isinya diketik manusia — jadi bisa salah
 salin. Skrip ini membandingkan setiap nilainya dengan output tersimpan di
 notebook: 6 model × (5 metrik agregat + 4 F1 per label + threshold + 3 epoch loss
 + 3 epoch val F1), seluruh statistik dataset, hyperparameter, versi runtime, dan
 pemilihan model terbaik. Tanpa dependensi di luar pustaka standar.
+
+Dua pemeriksaan terakhir memeriksa notebooknya sendiri, bukan `research.py`:
+output tersimpan di cell 13 dan 14 mencetak path file yang baru saja ditulis,
+jadi folder tujuan itu harus muncul di source cell yang sama. Ini yang membedakan
+notebook yang benar-benar dieksekusi dari notebook yang source-nya disunting
+setelah dijalankan — kasus kedua tetap lolos semua perbandingan angka, karena
+angkanya memang asli; yang tidak asli adalah kode di sebelahnya.
+
+Untuk mengadu salinan notebook lain (misalnya unduhan baru dari Colab) tanpa
+menimpa file di repo, arahkan `SIPEMO_NOTEBOOK` ke path-nya — dikenali juga oleh
+`training/verify_reproduction.py`:
+
+```bat
+set SIPEMO_NOTEBOOK=unduhan-baru.ipynb
+.venv\Scripts\python backend/verify_research.py
+```
 
 Skrip ini juga memeriksa frontend: `frontend/js/` tidak boleh memuat angka
 penelitian maupun angka turunan (persentase dihitung dari nilai API, bukan

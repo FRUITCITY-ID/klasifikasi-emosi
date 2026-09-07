@@ -11,11 +11,12 @@ Alur inferensi identik dengan `predict_one()` pada notebook cell 15:
 
 Perbedaan yang disengaja dengan notebook — dan alasannya:
 
-    Notebook versi awal menulis SEMUA model ke satu file `best_bert.pt`, sehingga
-    file terakhir di disk adalah bobot model yang dilatih paling akhir
-    (mBERT-base), bukan model dengan F1 tertinggi. Cell 15 kemudian mencetak
-    nama & metrik "IndoBERT-base (baseline)" di atas prediksi yang sebenarnya
-    dihasilkan bobot mBERT.
+    Cell 9 menulis SEMUA model ke satu file `best_bert.pt`, sehingga file
+    terakhir di disk adalah bobot model yang dilatih paling akhir (mBERT-base),
+    bukan model dengan F1 tertinggi. Cell 15 mendeteksinya lewat pencocokan
+    vocab_size lalu diam-diam beralih ke arsitektur yang cocok, tetapi tetap
+    mencetak nama & metrik "IndoBERT-base (baseline)" di atas prediksi yang
+    sebenarnya dihasilkan bobot mBERT.
 
     Backend ini menolak melakukan hal itu. Checkpoint diverifikasi dulu
     terhadap arsitektur IndoBERT-base; kalau tidak cocok, model TIDAK dimuat
@@ -255,13 +256,14 @@ def load() -> ModelState:
             f"Checkpoint ini punya vocab {ckpt_vocab:,} sedangkan "
             f"{config.SERVED_MODEL_NAME} ({config.SERVED_MODEL_ID}) butuh "
             f"{model_vocab:,}. Isinya kemungkinan besar {hint}.\n\n"
-            "Checkpoint ini kemungkinan dari notebook versi lama: train_one() menyimpan ke "
-            "path yang sama untuk setiap model, sehingga best_bert.pt berisi "
-            "bobot model YANG DILATIH TERAKHIR (mBERT-base), bukan model dengan "
-            "F1 tertinggi.\n\n"
+            "Checkpoint ini kemungkinan best_bert.pt hasil notebook: train_one() "
+            "di cell 9 menyimpan ke path yang sama untuk setiap model, sehingga "
+            "file itu berisi bobot model YANG DILATIH TERAKHIR (mBERT-base), "
+            "bukan model dengan F1 tertinggi.\n\n"
             "Perbaikan: latih ulang IndoBERT-base saja lalu simpan ke file "
-            "tersendiri (lihat README bagian 'Menyiapkan checkpoint'), atau "
-            "arahkan SIPEMO_CHECKPOINT ke checkpoint IndoBERT-base yang benar."
+            "tersendiri — jalankan training/train_indobert.py (lihat README "
+            "bagian 'Menyiapkan checkpoint') — atau arahkan SIPEMO_CHECKPOINT ke "
+            "checkpoint IndoBERT-base yang benar."
         )
         if not config.ALLOW_MISMATCH:
             STATE.status = "mismatch"
